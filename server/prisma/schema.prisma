@@ -13,17 +13,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   email     String   @unique
-  password  String   
-  role      Role     @default(UNASSIGNED)
+  role      Role     @default(Unassigned)
+  hash      String
+  salt      String
 }
 
 enum Role {
+  Unassigned
   SYSTEM_ADMIN
   LANDFILL_MANAGER
   STS_MANAGER
-  UNASSIGNED 
+}
+
+model session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
 }
