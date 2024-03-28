@@ -6,13 +6,12 @@ var passport = require('passport');
 var crypto = require('crypto');
 var LocalStrategy = require('passport-local').Strategy;
 const connectPgSimple = require("connect-pg-simple");
-
-const store = new (connectPgSimple(session))({ createTableIfMissing: true });
-
 const port = 8000;
+const store = new (connectPgSimple(session))({ createTableIfMissing: true });
+const prisma = new PrismaClient()
 
 const app = express();
-const prisma = new PrismaClient()
+
 //middleware.
 app.use(cors());
 app.use(express.json());
@@ -64,7 +63,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24 // Equals 1 day (1 day * 24 hr/1 day * 60 min/1 hr * 60 sec/1 min * 1000 ms / 1 sec)
+        maxAge: 1000 * 60 * 60 * 24 
     }
 }));
 
@@ -86,9 +85,28 @@ function genPassword(password) {
     };
 }
 
+function isAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.status(401).send({'message' : 'Unauthorized'});
+}
+
+function isAdmin(req, res, next) {
+    if (req.isAuthenticated() && req.user.role === 'SYSTEM_ADMIN') {
+        return next();
+    }
+    res.status(401).send({'message' : 'Unauthorized'});
+}
+
 //routes
 
 //auth
+app.get('/status', isAuthenticated, (req, res, next) => {
+    res.status(200).send({'message' : 'Ok'});
+})
+
+
 app.post('/auth/login', passport.authenticate('local', { failureRedirect: '/login-failure', successRedirect: '/login-success' }), (err, req, res, next) => {
     console.log("req.body", req.body);
     if (err) next(err);
@@ -136,7 +154,7 @@ app.post('/users', async (req, res) => {
 
 
 //list all users
-app.get("/users", async (req, res) => {
+app.get("/users", isAdmin, async (req, res) => {
     const users = await prisma.user.findMany();
     try {
         const users = await prisma.user.findMany();

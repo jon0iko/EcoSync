@@ -27,6 +27,7 @@ const Register = () => {
           })
           const msg = await response.json();
           setMessage(msg.message);
+          window.location.href = '/auth/login';
         }
         catch (error) {
           console.error('Error logging in:', error);
@@ -105,7 +106,7 @@ const Register = () => {
             </select>
           </div>
           <div className="flex justify-center">
-            <p className="text-sm text-red-500">{message}</p>
+            <p className="text-sm text-green-500">{message}</p>
           </div>
           <div className='flex justify-center'>
           <button
